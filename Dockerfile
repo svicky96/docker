@@ -1,36 +1,20 @@
-#Download base image ubuntu 16.04
-FROM ubuntu:16.04
- 
-# Update Software repository
-RUN apt-get update
- 
-# Install nginx, php-fpm and supervisord from ubuntu repository
-RUN apt-get install -y nginx php7.0-fpm supervisor && \
-    rm -rf /var/lib/apt/lists/*
- 
-#Define the ENV variable
-ENV nginx_vhost /etc/nginx/sites-available/default
-ENV php_conf /etc/php/7.0/fpm/php.ini
-ENV nginx_conf /etc/nginx/nginx.conf
-ENV supervisor_conf /etc/supervisor/supervisord.conf
- 
-# Enable php-fpm on nginx virtualhost configuration
-COPY default ${nginx_vhost}
-RUN sed -i -e 's/;cgi.fix_pathinfo=1/cgi.fix_pathinfo=0/g' ${php_conf} && \
-    echo "\ndaemon off;" >> ${nginx_conf}
- 
-#Copy supervisor configuration
-COPY supervisord.conf ${supervisor_conf}
- 
-RUN mkdir -p /run/php && \
-    chown -R www-data:www-data /var/www/html && \
-    chown -R www-data:www-data /run/php
- 
-# Volume configuration
-VOLUME ["/etc/nginx/sites-enabled", "/etc/nginx/certs", "/etc/nginx/conf.d", "/var/log/nginx", "/var/www/html"]
- 
-# Configure Services and Port
-COPY start.sh /start.sh
-CMD ["./start.sh"]
- 
-EXPOSE 80 443
+# Use the official image as a parent image
+FROM node:current-slim
+
+# Set the working directory
+WORKDIR /usr/src/app
+
+# Copy the file from your host to your current location
+COPY package.json .
+
+# Run the command inside your image filesystem
+RUN npm install
+
+# Inform Docker that the container is listening on the specified port at runtime.
+EXPOSE 8080
+
+# Run the specified command within the container.
+CMD [ "npm", "start" ]
+
+# Copy the rest of your app's source code from your host to your image filesystem.
+COPY . .
